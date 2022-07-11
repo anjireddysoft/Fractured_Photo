@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
@@ -7,10 +8,15 @@ import 'package:fractured_photo/model/piece.dart';
 
 class ShowImage extends StatefulWidget {
   List<Piece> pieceList;
+  File? imageFile;
 
   int columnCount;
 
-  ShowImage({Key? key, required this.pieceList, required this.columnCount})
+  ShowImage(
+      {Key? key,
+      required this.pieceList,
+      required this.columnCount,
+      required this.imageFile})
       : super(key: key);
 
   @override
@@ -20,13 +26,29 @@ class ShowImage extends StatefulWidget {
 class _ShowImageState extends State<ShowImage> {
   List<Piece> imageList = [];
   int? selectedIndex;
-  int isConfirmIndex=0;
-
+  int isConfirmIndex = 0;
+  Color? color;
+Timer? periodicTimer;
   @override
   void initState() {
     // TODO: implement initState
 
     widget.pieceList.shuffle(Random());
+
+    for (int i = 0; i < widget.pieceList.length; i++) {
+      //  imageList.add(widget.pieceList[i]);
+
+      print("image${imageList.length}");
+    }
+     periodicTimer = Timer.periodic(
+      const Duration(seconds: 1),
+          (timer) {
+        setState(() {
+          color = Colors.black;
+        });
+        // Update user about remaining time
+      },
+    );
 
     super.initState();
   }
@@ -44,74 +66,60 @@ class _ShowImageState extends State<ShowImage> {
         child: Column(
           children: [
             Expanded(
-              child: DragAndDropGridView(
-                  itemCount: widget.pieceList.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: widget.columnCount,
-                      crossAxisSpacing: 2,
-                      mainAxisSpacing: 2),
-                  onWillAccept: (oldIndex, newIndex) {
-                    print("length${widget.pieceList.length}");
-                    print("length${imageList.length}");
-                    if (imageList.length>widget.pieceList.length){
-                      print("anji");
-                      return false;
-                    }
-                    return true;
-                    // If you want to accept the child return true or else return false
-                  },
-                  onReorder: (oldIndex, newIndex) {
+                child: DragAndDropGridView(
+                    itemCount: widget.pieceList.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: widget.columnCount,
+                        crossAxisSpacing: 2,
+                        mainAxisSpacing: 2),
+                    addAutomaticKeepAlives: false,
+                    onWillAccept: (oldIndex, newIndex) {
+                      return true;
 
-                    final temp = widget.pieceList[oldIndex];
-                    widget.pieceList[oldIndex] = widget.pieceList[newIndex];
-                    widget.pieceList[newIndex] = temp;
+                      // If you want to accept the child return true or else return false
+                    },
+                    onReorder: (oldIndex, newIndex) {
+                      // imageList.clear()
 
-                    isConfirmIndex=0;
-                    for (int j = 0; j < imageList.length; j++) {
-                      print("degree${imageList[j].angle},picId${widget.pieceList[j].picId}== ${imageList[j].picId}");
+                      final temp = widget.pieceList[oldIndex];
+                      widget.pieceList[oldIndex] = widget.pieceList[newIndex];
+                      widget.pieceList[newIndex] = temp;
+                      setState(() {
+                        selectedIndex = newIndex;
+                        print("$selectedIndex");
+                      });
+                      checkPuzzleSuccess();
 
-                      if ((imageList[j].angle == 0 ||
-                          imageList[j].angle == 360) &&
-                          widget.pieceList[j].picId == imageList[j].picId) {
-                        isConfirmIndex+=1;
-                        if(isConfirmIndex==imageList.length){
-                          showAlertDialog(context, "Puzzle solved successfully");
-                        }
-
-                      }
-                    }
-
-
-
-                    setState(() {});
-                  },
-                  itemBuilder: (BuildContext context, int index) {
-                    double angle =
-                        double.parse(widget.pieceList[index].angle.toString()) *
-                            0.0174533;
-                    imageList.add(widget.pieceList[index]);
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          selectedIndex = index;
-                          print("$selectedIndex");imageList.clear();
-                        });
-                      },
-                      child: Transform.rotate(
-                        angle: angle,
-                        child: Image(
-                          image: widget.pieceList[index].image.image,
-                          fit: BoxFit.cover,
+                      setState(() {});
+                    },
+                    itemBuilder: (BuildContext context, int index) {
+                      double angle = double.parse(
+                              widget.pieceList[index].angle.toString()) *
+                          0.0174533;
+                      imageList.add(widget.pieceList[index]);
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            selectedIndex = index;
+                            print("$selectedIndex");
+                          });
+                        },
+                        child: Transform.rotate(
+                          angle: angle,
+                          child: Image(
+                            image: widget.pieceList[index].image.image,
+                            fit: BoxFit.cover,
+                          ),
                         ),
-                      ),
-                    );
-                  }),
-            ),
+                      );
+                    })),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    showPreviewImage(context, "title");
+                  },
                   child: const Text(
                     "Preview",
                     style: TextStyle(color: Colors.white, fontSize: 16),
@@ -129,36 +137,19 @@ class _ShowImageState extends State<ShowImage> {
                 ElevatedButton(
                   onPressed: () {
                     if (selectedIndex != null) {
-                      if (widget.pieceList[selectedIndex!].angle >= 360) {
+                      if (widget.pieceList[selectedIndex!].angle % 360 == 0) {
                         setState(() {
-                          widget.pieceList[selectedIndex!].angle = 360;
+                          widget.pieceList[selectedIndex!].angle = 270;
+                          checkPuzzleSuccess();
                         });
                       } else {
                         setState(() {
                           widget.pieceList[selectedIndex!].angle =
                               widget.pieceList[selectedIndex!].angle - 90;
+                          checkPuzzleSuccess();
                         });
                       }
                     }
-
-                    print("length${widget.pieceList.length}");
-                    print("length${imageList.length}");
-                    isConfirmIndex=0;
-                    for (int j = 0; j < imageList.length; j++) {
-                      print("degree${imageList[j].angle},picId${widget.pieceList[j].picId}== ${imageList[j].picId}");
-
-                      if ((imageList[j].angle == 0 ||
-                          imageList[j].angle == 360) &&
-                          widget.pieceList[j].picId == imageList[j].picId) {
-                        isConfirmIndex+=1;
-                        if(isConfirmIndex==imageList.length){
-                          showAlertDialog(context, "Puzzle solved successfully");
-                        }
-
-                      }
-                    }
-
-
 
                     imageList.clear();
                     setState(() {});
@@ -172,31 +163,20 @@ class _ShowImageState extends State<ShowImage> {
                 ElevatedButton(
                   onPressed: () {
                     if (selectedIndex != null) {
-                      if (widget.pieceList[selectedIndex!].angle >= 360) {
+                      if (widget.pieceList[selectedIndex!].angle % 360 == 0) {
                         setState(() {
-                          widget.pieceList[selectedIndex!].angle = 360;
+                          widget.pieceList[selectedIndex!].angle = 90;
+                          checkPuzzleSuccess();
                         });
                       } else {
                         setState(() {
                           widget.pieceList[selectedIndex!].angle =
                               widget.pieceList[selectedIndex!].angle + 90;
+                          checkPuzzleSuccess();
                         });
                       }
                     }
-                    isConfirmIndex=0;
-                    for (int j = 0; j < imageList.length; j++) {
-                       print("degree${imageList[j].angle},picId${widget.pieceList[j].picId}== ${imageList[j].picId}");
 
-                      if ((imageList[j].angle == 0 ||
-                              imageList[j].angle == 360) &&
-                          widget.pieceList[j].picId == imageList[j].picId) {
-                        isConfirmIndex+=1;
-                        if(isConfirmIndex==imageList.length){
-                        showAlertDialog(context, "Puzzle solved successfully");
-                        }
-
-                      }
-                    }
                     imageList.clear();
 
                     setState(() {});
@@ -215,15 +195,44 @@ class _ShowImageState extends State<ShowImage> {
     );
   }
 
+  checkPuzzleSuccess() {
+    isConfirmIndex = 0;
+    for (int j = 0; j < widget.pieceList.length; j++) {
+      if ((widget.pieceList[j].angle % 360 == 0) &&
+          j == widget.pieceList[j].picId) {
+        isConfirmIndex += 1;
+        if (isConfirmIndex == widget.pieceList.length) {
+          showAlertDialog(context, "Congratulations!\n You solved it.");
+        }
+      }
+    }
+  }
+
   showAlertDialog(BuildContext context, String title) {
     showDialog(
       context: context,
       builder: (BuildContext c) {
+        Future.delayed(Duration(seconds: 5), () {
+          Navigator.of(context).pop(true);
+        });
+
+         periodicTimer = Timer.periodic(
+          const Duration(seconds: 2),
+          (timer) {
+            setState(() {
+              color = Colors.red;
+            });
+            // Update user about remaining time
+          },
+        );
         return AlertDialog(
-          title: new Text("Wow!"),
-          content: new Text(title),
+          content: new Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 20, color: color),
+          ),
           actions: <Widget>[
-            new FlatButton(
+            /* new FlatButton(
               child: new Text(
                 "OK",
                 style: TextStyle(color: Colors.green),
@@ -231,17 +240,54 @@ class _ShowImageState extends State<ShowImage> {
               onPressed: () {
                 Navigator.pop(context);
               },
-            ),
+            ),*/
           ],
         );
       },
     );
   }
-/*  Widget imageview() {
+
+  showPreviewImage(BuildContext context, String title) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext c) {
+        return SimpleDialog(
+          titlePadding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+          contentPadding: EdgeInsets.all(0),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("Preview"),
+              IconButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  icon: Icon(
+                    Icons.cancel_outlined,
+                    size: 30,
+                  ))
+            ],
+          ),
+          children: [
+            Divider(
+              color: Colors.black,
+              thickness: 1,
+            ),
+            SimpleDialogOption(
+              child: Image.file(File(widget.imageFile!.path)),
+            )
+          ],
+        );
+      },
+    );
+  }
+
+  Widget imageview() {
     if (widget.imageFile == null) {
       return Text("photo not selected");
     } else {
-      return Image(image: widget.imageFile.image);
+      return Image.file(File(widget.imageFile!.path));
     }
-  }*/
+  }
 }

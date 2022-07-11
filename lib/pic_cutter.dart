@@ -103,13 +103,13 @@ class _PicShowState extends State<PicShow> {
               print("y$y");
             }
 
-            Navigator.push(
+         /*   Navigator.push(
                 context,
                 MaterialPageRoute(
                     builder: (context) => ShowImage(
                           pieceList: pieceList,
                           columnCount: count!.column,
-                        )));
+                        )));*/
           },
         ),
         body: Container(

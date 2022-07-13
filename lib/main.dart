@@ -5,9 +5,9 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:fractured_photo/model/count.dart';
 import 'package:fractured_photo/model/piece.dart';
-import 'package:fractured_photo/pic_cutter.dart';
-import 'package:fractured_photo/puzzle_name.dart';
-import 'package:fractured_photo/showImage.dart';
+import 'package:fractured_photo/screens/pic_cutter.dart';
+import 'package:fractured_photo/screens/puzzle_name.dart';
+import 'package:fractured_photo/screens/showImage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as imglib;
 import 'package:image/image.dart';
@@ -96,7 +96,8 @@ class _MyAppState extends State<MyApp> {
 
   /// Get from Camera
   _getFromCamera() async {
-    PickedFile? pickedFile =await ImagePicker.platform.pickImage(source: ImageSource.camera);
+    PickedFile? pickedFile =
+        await ImagePicker.platform.pickImage(source: ImageSource.camera);
     if (pickedFile != null) {
       setState(() {
         imageFile = File(pickedFile.path);
@@ -156,10 +157,12 @@ class _MyAppState extends State<MyApp> {
                         final srcImage = decodeImage(
                             File(imageFile!.path).readAsBytesSync());
 
-                        var picHeight = srcImage!.height;
-                        var picWidth = srcImage!.width;
-                        var height = picHeight / count!.row;
-                        var width = picWidth / count!.column;
+                        var picHeight =
+                            srcImage?.height != null ? srcImage?.height : 100;
+                        var picWidth =
+                            srcImage?.width != null ? srcImage?.width : 100;
+                        var height = picHeight! / count!.row;
+                        var width = picWidth! / count!.column;
 
                         int picId = 0;
                         var imagesCount = count!.row * count!.column;
@@ -168,6 +171,7 @@ class _MyAppState extends State<MyApp> {
                         Random rand = Random();
 
                         for (int i = 0; i < count!.row; i++) {
+
                           for (int j = 0; j < count!.column; j++) {
                             var croppedImage = copyCrop(srcImage!, x.round(),
                                 y.round(), width.round(), height.round());
@@ -175,7 +179,7 @@ class _MyAppState extends State<MyApp> {
                             image = a.Image.memory(Uint8List.fromList(
                                 imglib.encodeJpg(croppedImage)));
                             int randomIndex = rand.nextInt(angles.length);
-
+                            print("image${image}");
                             Piece piece = Piece(
                                 row: i,
                                 column: j,
@@ -200,6 +204,7 @@ class _MyAppState extends State<MyApp> {
                                       pieceList: pieceList,
                                       columnCount: count!.column,
                                       imageFile: imageFile,
+                                      rowCount: count!.row,
                                     )));
                       },
                       child: Padding(

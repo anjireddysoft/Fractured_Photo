@@ -2,16 +2,18 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:fractured_photo/model/piece.dart';
-import 'package:fractured_photo/showImage.dart';
+import 'package:fractured_photo/screens/showImage.dart';
 
 class NameScreen extends StatefulWidget {
   List<Piece> pieceList;
   File? imageFile;
   int columnCount;
+  int rowCount;
 
   NameScreen(
       {Key? key,
       required this.imageFile,
+        required this.rowCount,
       required this.pieceList,
       required this.columnCount})
       : super(key: key);
@@ -63,6 +65,7 @@ class _NameScreenState extends State<NameScreen> {
                                     columnCount: widget.columnCount,
                                     imageFile: widget.imageFile,
                                     puzzleName: nameController.text,
+                                    rowCount:  widget.rowCount,
                                   )));
                         }
 

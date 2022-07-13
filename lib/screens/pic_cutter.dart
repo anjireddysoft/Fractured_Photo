@@ -1,3 +1,4 @@
+/*
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
@@ -5,7 +6,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:fractured_photo/model/count.dart';
 import 'package:fractured_photo/model/piece.dart';
-import 'package:fractured_photo/showImage.dart';
+import 'package:fractured_photo/screens/showImage.dart';
 import 'package:image/image.dart' as imglib;
 import 'package:image/image.dart';
 import 'package:flutter/src/widgets/image.dart' as a;
@@ -103,13 +104,15 @@ class _PicShowState extends State<PicShow> {
               print("y$y");
             }
 
-         /*   Navigator.push(
+         */
+/*   Navigator.push(
                 context,
                 MaterialPageRoute(
                     builder: (context) => ShowImage(
                           pieceList: pieceList,
                           columnCount: count!.column,
-                        )));*/
+                        )));*//*
+
           },
         ),
         body: Container(
@@ -165,3 +168,4 @@ class _PicShowState extends State<PicShow> {
     );
   }
 }
+*/

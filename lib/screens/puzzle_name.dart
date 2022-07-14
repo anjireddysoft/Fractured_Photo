@@ -66,6 +66,7 @@ class _NameScreenState extends State<NameScreen> {
                                     imageFile: widget.imageFile,
                                     puzzleName: nameController.text,
                                     rowCount:  widget.rowCount,
+                                    isFromSavedPuzzle: false,
                                   )));
                         }
 

@@ -1,51 +1,40 @@
-
-
-import 'dart:convert';
-
-import 'package:fractured_photo/model/piece.dart';
-
-class PuzzleIfo {
-  int? id;
-  String? file;
+class PuzzleInfo {
+  int? puzzle_id;
+  String? file_path;
   String? puzzleName;
-  String? row;
-  int? column;
-  List<Piece>? pieceList;
+  String? pattern;
+  int? pieces_count;
+  String? dateTime;
 
-  PuzzleIfo(
-      {required this.file,
+  PuzzleInfo(
+      { this.puzzle_id,
+      required this.file_path,
       required this.puzzleName,
-      required this.row,
-      required this.column,
-      required this.pieceList});
+      required this.pattern,
+        required this.dateTime,
+      required this.pieces_count});
 
 //converting puzzle object to Map object to store in database
   Map<String, dynamic> toMap() {
-    var map = Map<String, dynamic>();
-    if (id != null) {
-      map["id"] = id;
+    var map = <String, dynamic>{};
+    if (puzzle_id != null) {
+      map["puzzle_id"] = puzzle_id;
     }
     map['puzzleName'] = puzzleName;
-    map['file'] = file;
-    map['row'] = row;
-    map['column'] = column;
-    if (this.pieceList != null) {
-      map['PieceList'] = this.pieceList!.map((v) => v.toJson()).toString();
-    }
+    map['file_path'] = file_path;
+    map['pattern'] = pattern;
+    map['pieces_count'] = pieces_count;
+    map["dateTime"]=dateTime;
+
     return map;
   }
 
-  PuzzleIfo.fromMapObject(Map<String, dynamic> map) {
-    id = map['id'];
+  PuzzleInfo.fromMapObject(Map<String, dynamic> map) {
+    puzzle_id = map['puzzle_id'];
     puzzleName = map['puzzleName'];
-    file = map['file'];
-    row = map['row'];
-    column = map['column'];
-    if (map['PieceList'] != null) {
-     // pieceList = [];
-      (json.decode(map['PieceList'])as List).forEach((v) {
-       this.pieceList!.add(new Piece.fromMapObject(v));
-      });
-    }
+    file_path = map['file_path'];
+    pattern = map['pattern'];
+    pieces_count = map['pieces_count'];
+    dateTime=map["dateTime"];
   }
 }

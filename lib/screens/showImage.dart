@@ -8,9 +8,12 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:drag_and_drop_gridview/devdrag.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fractured_photo/main.dart';
 import 'package:fractured_photo/model/piece.dart';
+import 'package:fractured_photo/model/piece_info.dart';
 import 'package:fractured_photo/model/puzzle_info.dart';
 import 'package:fractured_photo/utils/database_helper.dart';
+import 'package:intl/intl.dart';
 
 class ShowImage extends StatefulWidget {
   List<Piece> pieceList;
@@ -18,13 +21,16 @@ class ShowImage extends StatefulWidget {
   int columnCount;
   int rowCount;
   String puzzleName;
+  bool isFromSavedPuzzle;
 
-  ShowImage({Key? key,
-    required this.pieceList,
-    required this.columnCount,
-    required this.imageFile,
-    required this.rowCount,
-    required this.puzzleName})
+  ShowImage(
+      {Key? key,
+      required this.pieceList,
+      required this.columnCount,
+      required this.imageFile,
+      required this.rowCount,
+        required this.isFromSavedPuzzle,
+      required this.puzzleName})
       : super(key: key);
 
   @override
@@ -43,27 +49,20 @@ class _ShowImageState extends State<ShowImage> {
   Uint8List? clickAudioBytes;
   AudioPlayer player = AudioPlayer();
   bool isBlack = true;
-  TextStyle _redStyle = TextStyle(
-    color: Colors.red,
-    fontSize: 24,
-  );
-  TextStyle _blackStyle = TextStyle(
-    color: Colors.black,
-    fontSize: 24,
-  );
+
+
   TextStyle? _style;
   Timer? timer;
   var index = 1;
   DatabaseHelper databaseHelper = DatabaseHelper();
-  List<PuzzleIfo>puzzleInfoList = [];
+  List<PuzzleInfo> puzzleInfoList = [];
 
   readData() {
     databaseHelper.getPuzzleList().then((value) {
       print("value${value.length}");
-     setState(() {
-       puzzleInfoList=value;
-     });
-
+      setState(() {
+        puzzleInfoList = value;
+      });
 
       print("puzzleInfoList${puzzleInfoList.length}");
     });
@@ -74,10 +73,12 @@ class _ShowImageState extends State<ShowImage> {
     // TODO: implement initState
     databaseHelper = DatabaseHelper();
 
-   // databaseHelper.deleteNote();
+    // databaseHelper.deleteNote();
     player = AudioPlayer();
-   // readData();
-    widget.pieceList.shuffle(Random());
+    // readData();
+    if(!widget.isFromSavedPuzzle) {
+      widget.pieceList.shuffle(Random());
+    }
 
     readAudioFiles();
     super.initState();
@@ -92,7 +93,7 @@ class _ShowImageState extends State<ShowImage> {
         bytes!.buffer.asUint8List(bytes!.offsetInBytes, bytes!.lengthInBytes);
     print("congratulationsAudioBytes${congratulationsAudioBytes.toString()}");
     clickBytes =
-    await rootBundle.load(clickAudioAsset); //load audio from assets
+        await rootBundle.load(clickAudioAsset); //load audio from assets
     clickAudioBytes = clickBytes!.buffer
         .asUint8List(clickBytes!.offsetInBytes, clickBytes!.lengthInBytes);
   }
@@ -106,357 +107,202 @@ class _ShowImageState extends State<ShowImage> {
         title: const Text("Show Image"),
       ),
       body: Container(
-        padding: const EdgeInsets.all(20),
-        child: MediaQuery
-            .of(context)
-            .orientation == Orientation.portrait
-            ? Column(
-          children: [
-            Expanded(
-                child: DragAndDropGridView(
-                    itemCount: widget.pieceList.length,
-                    gridDelegate:
-                    SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: widget.columnCount,
-                        crossAxisSpacing: 2,
-                        mainAxisSpacing: 2),
-                    addAutomaticKeepAlives: false,
-                    onWillAccept: (oldIndex, newIndex) {
-                      return true;
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Expanded(
+                  child: DragAndDropGridView(
+                      itemCount: widget.pieceList.length,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: widget.columnCount,
+                          crossAxisSpacing: 2,
+                          mainAxisSpacing: 2),
+                      addAutomaticKeepAlives: false,
+                      onWillAccept: (oldIndex, newIndex) {
+                        return true;
 
-                      // If you want to accept the child return true or else return false
+                        // If you want to accept the child return true or else return false
+                      },
+                      onReorder: (oldIndex, newIndex) async {
+
+
+                        final temp = widget.pieceList[oldIndex];
+                        widget.pieceList[oldIndex] = widget.pieceList[newIndex];
+                        widget.pieceList[newIndex] = temp;
+                        int result = await player.playBytes(clickAudioBytes!);
+                        if (result == 1) {
+                          //play success
+                          print("audio is playing.");
+                        } else {
+                          print("Error while playing audio.");
+                        }
+                        setState(() {
+                          selectedIndex = newIndex;
+                        });
+                        checkPuzzleSuccess();
+
+                        setState(() {});
+                      },
+                      itemBuilder: (BuildContext context, int index) {
+                        double angle = double.parse(widget.pieceList[index].angle.toString()) * 0.0174533;
+                        imageList.add(widget.pieceList[index]);
+                  Image image = Image.memory(base64Decode(widget.pieceList[index].image));
+
+
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedIndex = index;
+                            });
+                          },
+                          child: Transform.rotate(
+                            angle: angle,
+                            child: Image(
+                              image:image.image,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        );
+                      })),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ElevatedButton(
+                    onPressed: () async {
+
+                      showPreviewImage(context, "title");
                     },
-                    onReorder: (oldIndex, newIndex) async {
-                      // imageList.clear()
+                    child: const Text(
+                      "Preview",
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                        primary: const Color(0xff1cc29f)),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      PuzzleInfo puzzleInfo = PuzzleInfo(
+                        dateTime: DateFormat('dd-MMM-yyyy')
+                            .format(DateTime.now())
+                            .toString(),
+                        file_path: widget.imageFile!.path,
+                        puzzleName: widget.puzzleName,
+                        pattern: "${widget.rowCount}x${widget.columnCount}"
+                            .toString(),
+                        pieces_count: int.parse(
+                            "${widget.rowCount * widget.columnCount}"),
+                      );
 
-                      final temp = widget.pieceList[oldIndex];
-                      widget.pieceList[oldIndex] =
-                      widget.pieceList[newIndex];
-                      widget.pieceList[newIndex] = temp;
-                      int result =
-                      await player.playBytes(clickAudioBytes!);
-                      if (result == 1) {
-                        //play success
-                        print("audio is playing.");
-                      } else {
-                        print("Error while playing audio.");
-                      }
-                      setState(() {
-                        selectedIndex = newIndex;
+                      databaseHelper.insertPuzzle(puzzleInfo).then((value) {
+                        bool isDataSaved = true;
+                        String dataSaveError = "";
+                        for (int i = 0; i < widget.pieceList.length; i++) {
+
+                          //List<int> imageBytes = widget.pieceList[i].image
+                        //  print(imageBytes);
+                          //String base64Image = base64Encode(widget.pieceList[i].image);
+
+
+
+                          Piece_Info piece_info = Piece_Info(
+                            puzzleId: value,
+                            rotation: widget.pieceList[i].angle,
+                            currentPosition: i,
+                            originalPosition: widget.pieceList[i].original_Position,
+                            image: widget.pieceList[i].image
+                          );
+                          databaseHelper
+                              .insertPiece(piece_info)
+                              .then((value) {})
+                              .catchError((onError) {
+                            isDataSaved = false;
+                            dataSaveError = onError.toString();
+                          });
+                        }
+
+                        if (isDataSaved) {
+                          showAlertDialogForDbOperations(
+                              context, "Your puzzle saved Successfully");
+                        } else {
+                          showAlertDialogForDbOperations(
+                              context, dataSaveError);
+                        }
+                      }).catchError((onError) {
+                        showAlertDialogForDbOperations(
+                            context, onError.toString());
                       });
-                      checkPuzzleSuccess();
+                    },
+                    child: const Text(
+                      "Save",
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                        primary: const Color(0xff1cc29f)),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (selectedIndex != null) {
+                        playClickAudio();
+                        if (widget.pieceList[selectedIndex!].angle % 360 == 0) {
+                          setState(() {
+                            widget.pieceList[selectedIndex!].angle = 270;
+
+                            checkPuzzleSuccess();
+                          });
+                        } else {
+                          playClickAudio();
+                          setState(() {
+                            widget.pieceList[selectedIndex!].angle =
+                                widget.pieceList[selectedIndex!].angle - 90;
+
+                            checkPuzzleSuccess();
+                          });
+                        }
+                      }
+
+                      imageList.clear();
+                      setState(() {});
+                    },
+                    child: const Icon(
+                      Icons.rotate_left_outlined,
+                      color: Colors.black,
+                    ),
+                    style: ElevatedButton.styleFrom(primary: Colors.white),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (selectedIndex != null) {
+                        if (widget.pieceList[selectedIndex!].angle % 360 == 0) {
+                          playClickAudio();
+                          setState(() {
+                            widget.pieceList[selectedIndex!].angle = 90;
+                            checkPuzzleSuccess();
+                          });
+                        } else {
+                          playClickAudio();
+                          setState(() {
+                            widget.pieceList[selectedIndex!].angle =
+                                widget.pieceList[selectedIndex!].angle + 90;
+
+                            checkPuzzleSuccess();
+                          });
+                        }
+                      }
+
+                      imageList.clear();
 
                       setState(() {});
                     },
-                    itemBuilder: (BuildContext context, int index) {
-                      double angle = double.parse(
-                          widget.pieceList[index].angle.toString()) *
-                          0.0174533;
-                      imageList.add(widget.pieceList[index]);
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            selectedIndex = index;
-                          });
-                        },
-                        child: Transform.rotate(
-                          angle: angle,
-                          child: Image(
-                            image: widget.pieceList[index].image.image,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      );
-                    })),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton(
-                  onPressed: () async {
-                    var puzzle = await databaseHelper.getPuzzleList();
-                    setState(() {
-                      puzzleInfoList = puzzle;
-                      print("puzzleInfoList${puzzleInfoList[0].pieceList}");
-                    });
-                    print("puzzle${puzzle[0].id}");
-                    print("puzzle${puzzle[0].row}");
-                    print("puzzle${puzzle[0].column}");
-                    print("puzzle${puzzle[0].file}");
-                    print("puzzle${puzzle[0].pieceList}");
-
-
-                    showPreviewImage(context, "title");
-                  },
-                  child: const Text(
-                    "Preview",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
+                    child: const Icon(
+                      Icons.rotate_right_outlined,
+                      color: Colors.black,
+                    ),
+                    style: ElevatedButton.styleFrom(primary: Colors.white),
                   ),
-                  style: ElevatedButton.styleFrom(
-                      primary: const Color(0xff1cc29f)),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    print("pieceList${widget.pieceList.length}");
-                    PuzzleIfo puzzleInfo = PuzzleIfo(
-                        file: widget.imageFile!.path,
-                        puzzleName: widget.puzzleName,
-                        row: widget.rowCount.toString(),
-                        column: widget.columnCount,
-                        pieceList: widget.pieceList
-
-                    );
-
-                    databaseHelper.insertNote(puzzleInfo).then((value) {
-                      showAlertDialogForDbOperations(
-                          context, "Data saved Successfully");
-                    }).catchError((onError) {
-                      showAlertDialogForDbOperations(
-                          context, onError.toString());
-                    });
-                  },
-                  child: const Text(
-                    "Save",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                      primary: const Color(0xff1cc29f)),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (selectedIndex != null) {
-                      playClickAudio();
-                      if (widget.pieceList[selectedIndex!].angle % 360 ==
-                          0) {
-                        setState(() {
-                          widget.pieceList[selectedIndex!].angle = 270;
-
-                          checkPuzzleSuccess();
-                        });
-                      } else {
-                        playClickAudio();
-                        setState(() {
-                          widget.pieceList[selectedIndex!].angle =
-                              widget.pieceList[selectedIndex!].angle - 90;
-
-                          checkPuzzleSuccess();
-                        });
-                      }
-                    }
-
-                    imageList.clear();
-                    setState(() {});
-                  },
-                  child: const Icon(
-                    Icons.rotate_left_outlined,
-                    color: Colors.black,
-                  ),
-                  style: ElevatedButton.styleFrom(primary: Colors.white),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (selectedIndex != null) {
-                      if (widget.pieceList[selectedIndex!].angle % 360 ==
-                          0) {
-                        playClickAudio();
-                        setState(() {
-                          widget.pieceList[selectedIndex!].angle = 90;
-                          checkPuzzleSuccess();
-                        });
-                      } else {
-                        playClickAudio();
-                        setState(() {
-                          widget.pieceList[selectedIndex!].angle =
-                              widget.pieceList[selectedIndex!].angle + 90;
-
-                          checkPuzzleSuccess();
-                        });
-                      }
-                    }
-
-                    imageList.clear();
-
-                    setState(() {});
-                  },
-                  child: const Icon(
-                    Icons.rotate_right_outlined,
-                    color: Colors.black,
-                  ),
-                  style: ElevatedButton.styleFrom(primary: Colors.white),
-                ),
-              ],
-            )
-          ],
-        )
-            : Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Expanded(
-                    child: DragAndDropGridView(
-                        itemCount: widget.pieceList.length,
-                        gridDelegate:
-                        SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: widget.columnCount,
-                            crossAxisSpacing: 2,
-                            mainAxisSpacing: 2),
-                        addAutomaticKeepAlives: false,
-                        onWillAccept: (oldIndex, newIndex) {
-                          return true;
-
-                          // If you want to accept the child return true or else return false
-                        },
-                        onReorder: (oldIndex, newIndex) async {
-                          // imageList.clear()
-
-                          final temp = widget.pieceList[oldIndex];
-                          widget.pieceList[oldIndex] =
-                          widget.pieceList[newIndex];
-                          widget.pieceList[newIndex] = temp;
-                          int result =
-                          await player.playBytes(clickAudioBytes!);
-                          if (result == 1) {
-                            //play success
-                            print("audio is playing.");
-                          } else {
-                            print("Error while playing audio.");
-                          }
-                          setState(() {
-                            selectedIndex = newIndex;
-                          });
-                          checkPuzzleSuccess();
-
-                          setState(() {});
-                        },
-                        itemBuilder: (BuildContext context, int index) {
-                          double angle = double.parse(widget
-                              .pieceList[index].angle
-                              .toString()) *
-                              0.0174533;
-                          imageList.add(widget.pieceList[index]);
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedIndex = index;
-                              });
-                            },
-                            child: Transform.rotate(
-                              angle: angle,
-                              child: Image(
-                                image:
-                                widget.pieceList[index].image.image,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          );
-                        })),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          if (selectedIndex != null) {
-                            playClickAudio();
-                            if (widget.pieceList[selectedIndex!].angle %
-                                360 ==
-                                0) {
-                              setState(() {
-                                widget.pieceList[selectedIndex!].angle =
-                                270;
-
-                                checkPuzzleSuccess();
-                              });
-                            } else {
-                              playClickAudio();
-                              setState(() {
-                                widget.pieceList[selectedIndex!].angle =
-                                    widget.pieceList[selectedIndex!]
-                                        .angle -
-                                        90;
-
-                                checkPuzzleSuccess();
-                              });
-                            }
-                          }
-
-                          imageList.clear();
-                          setState(() {});
-                        },
-                        child: const Icon(
-                          Icons.rotate_left_outlined,
-                          color: Colors.black,
-                        ),
-                        style: ElevatedButton.styleFrom(
-                            primary: Colors.white),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          if (selectedIndex != null) {
-                            if (widget.pieceList[selectedIndex!].angle %
-                                360 ==
-                                0) {
-                              playClickAudio();
-                              setState(() {
-                                widget.pieceList[selectedIndex!].angle =
-                                90;
-                                checkPuzzleSuccess();
-                              });
-                            } else {
-                              playClickAudio();
-                              setState(() {
-                                widget.pieceList[selectedIndex!].angle =
-                                    widget.pieceList[selectedIndex!]
-                                        .angle +
-                                        90;
-
-                                checkPuzzleSuccess();
-                              });
-                            }
-                          }
-
-                          imageList.clear();
-
-                          setState(() {});
-                        },
-                        child: const Icon(
-                          Icons.rotate_right_outlined,
-                          color: Colors.black,
-                        ),
-                        style: ElevatedButton.styleFrom(
-                            primary: Colors.white),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          showPreviewImage(context, "title");
-                        },
-                        child: const Text(
-                          "Preview",
-                          style: TextStyle(
-                              color: Colors.white, fontSize: 16),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                            primary: const Color(0xff1cc29f)),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {},
-                        child: const Text(
-                          "Save",
-                          style: TextStyle(
-                              color: Colors.white, fontSize: 16),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                            primary: const Color(0xff1cc29f)),
-                      ),
-                    ],
-                  ),
-                )
-              ],
-            )
-          ],
-        ),
-      ),
+                ],
+              )
+            ],
+          )),
     );
   }
 
@@ -464,7 +310,7 @@ class _ShowImageState extends State<ShowImage> {
     isConfirmIndex = 0;
     for (int j = 0; j < widget.pieceList.length; j++) {
       if ((widget.pieceList[j].angle % 360 == 0) &&
-          j == widget.pieceList[j].picId) {
+          j == widget.pieceList[j].original_Position) {
         isConfirmIndex += 1;
         if (isConfirmIndex == widget.pieceList.length) {
           showAlertDialog(context, "Congratulations!\n You solved it.");
@@ -484,12 +330,12 @@ class _ShowImageState extends State<ShowImage> {
 
         return AlertDialog(
           content: Text(title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.black, fontSize: 24)),
+              style: const TextStyle(color: Colors.black, fontSize: 20)),
           actions: [
             MaterialButton(
               onPressed: () {
-                Navigator.of(context).pop(true);
+                Navigator.pushReplacement(
+                    context, MaterialPageRoute(builder: (context) => MyApp()));
               },
               color: Colors.green,
               child: Text("OK"),

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
@@ -5,9 +6,10 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:fractured_photo/model/count.dart';
 import 'package:fractured_photo/model/piece.dart';
-import 'package:fractured_photo/screens/pic_cutter.dart';
+
 import 'package:fractured_photo/screens/puzzle_name.dart';
-import 'package:fractured_photo/screens/showImage.dart';
+import 'package:fractured_photo/screens/saved_puzzles.dart';
+
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as imglib;
 import 'package:image/image.dart';
@@ -67,6 +69,17 @@ class _MyAppState extends State<MyApp> {
                         _getFromCamera();
                       },
                       child: const Text("PICK FROM CAMERA"),
+                    ),
+                    MaterialButton(
+                      color: Colors.lightGreenAccent,
+                      onPressed: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (BuildContext context) =>
+                                    Saved_Puzzle()));
+                      },
+                      child: const Text("Saved Puzzles"),
                     )
                   ],
                 )
@@ -171,21 +184,25 @@ class _MyAppState extends State<MyApp> {
                         Random rand = Random();
 
                         for (int i = 0; i < count!.row; i++) {
-
                           for (int j = 0; j < count!.column; j++) {
                             var croppedImage = copyCrop(srcImage!, x.round(),
                                 y.round(), width.round(), height.round());
+                     // File file =File.fromRawPath(Uint8List.fromList(imglib.encodeJpg(croppedImage)));
+
+                            String base64Image = base64.encode(Uint8List.fromList(
+                                imglib.encodeJpg(croppedImage)));
+
+
+
 
                             image = a.Image.memory(Uint8List.fromList(
                                 imglib.encodeJpg(croppedImage)));
                             int randomIndex = rand.nextInt(angles.length);
                             print("image${image}");
                             Piece piece = Piece(
-                                row: i,
-                                column: j,
-                                image: image,
+                                image: base64Image,
                                 angle: angles[randomIndex],
-                                picId: picId);
+                                original_Position: picId);
 
                             pieceList.add(piece);
 

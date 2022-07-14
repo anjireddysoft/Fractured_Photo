@@ -1,35 +1,32 @@
 import 'package:flutter/material.dart';
 
 class Piece {
-  late  int row;
-  late int column;
-  late Image image;
+  late String image;
   late int angle;
-  late int picId;
+  late int original_Position;
+  int? current_Position;
 
   Piece(
-      {required this.row,
-      required this.column,
-      required this.image,
+      {required this.image,
       required this.angle,
-      required this.picId});
+      required this.original_Position,
+      this.current_Position});
 
   Map<String, dynamic> toJson() {
-    var map = Map<String, dynamic>();
+    var map = <String, dynamic>{};
 
-    map['row'] = row;
-    map['column'] = column;
     map['image'] = image.toString();
     map['angle'] = angle;
-    map['picId'] = picId;
+    map['original_Position'] = original_Position;
+    map['current_Position'] = current_Position;
+
     return map;
   }
-  Piece.fromMapObject(Map<String, dynamic> map) {
-    this.row=map['row'];
-    this.column = map['column'];
-    this.image= map['image'] ;
-    this.angle = map['angle'] ;
-    this.picId =  map['picId'] ;
 
+  Piece.fromMapObject(Map<String, dynamic> map) {
+    this.image = map['image'];
+    this.angle = map['angle'];
+    this.original_Position = map['original_Position'];
+    this.current_Position = map['current_Position'];
   }
 }

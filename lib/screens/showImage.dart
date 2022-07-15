@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:archive/archive_io.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:drag_and_drop_gridview/devdrag.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +15,7 @@ import 'package:fractured_photo/model/piece_info.dart';
 import 'package:fractured_photo/model/puzzle_info.dart';
 import 'package:fractured_photo/utils/database_helper.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 
 class ShowImage extends StatefulWidget {
   List<Piece> pieceList;
@@ -22,6 +24,8 @@ class ShowImage extends StatefulWidget {
   int rowCount;
   String puzzleName;
   bool isFromSavedPuzzle;
+  PuzzleInfo? puzzleInfo;
+  int? puzzleId;
 
   ShowImage(
       {Key? key,
@@ -29,8 +33,10 @@ class ShowImage extends StatefulWidget {
       required this.columnCount,
       required this.imageFile,
       required this.rowCount,
-        required this.isFromSavedPuzzle,
-      required this.puzzleName})
+      required this.isFromSavedPuzzle,
+      required this.puzzleName,
+      this.puzzleInfo,
+      this.puzzleId})
       : super(key: key);
 
   @override
@@ -50,12 +56,12 @@ class _ShowImageState extends State<ShowImage> {
   AudioPlayer player = AudioPlayer();
   bool isBlack = true;
 
-
   TextStyle? _style;
   Timer? timer;
   var index = 1;
   DatabaseHelper databaseHelper = DatabaseHelper();
   List<PuzzleInfo> puzzleInfoList = [];
+  List<Piece_Info> pieceInfoList = [];
 
   readData() {
     databaseHelper.getPuzzleList().then((value) {
@@ -76,7 +82,7 @@ class _ShowImageState extends State<ShowImage> {
     // databaseHelper.deleteNote();
     player = AudioPlayer();
     // readData();
-    if(!widget.isFromSavedPuzzle) {
+    if (!widget.isFromSavedPuzzle) {
       widget.pieceList.shuffle(Random());
     }
 
@@ -124,8 +130,6 @@ class _ShowImageState extends State<ShowImage> {
                         // If you want to accept the child return true or else return false
                       },
                       onReorder: (oldIndex, newIndex) async {
-
-
                         final temp = widget.pieceList[oldIndex];
                         widget.pieceList[oldIndex] = widget.pieceList[newIndex];
                         widget.pieceList[newIndex] = temp;
@@ -144,10 +148,12 @@ class _ShowImageState extends State<ShowImage> {
                         setState(() {});
                       },
                       itemBuilder: (BuildContext context, int index) {
-                        double angle = double.parse(widget.pieceList[index].angle.toString()) * 0.0174533;
+                        double angle = double.parse(
+                                widget.pieceList[index].angle.toString()) *
+                            0.0174533;
                         imageList.add(widget.pieceList[index]);
-                  Image image = Image.memory(base64Decode(widget.pieceList[index].image));
-
+                        Image image = Image.memory(
+                            base64Decode(widget.pieceList[index].image));
 
                         return GestureDetector(
                           onTap: () {
@@ -158,7 +164,7 @@ class _ShowImageState extends State<ShowImage> {
                           child: Transform.rotate(
                             angle: angle,
                             child: Image(
-                              image:image.image,
+                              image: image.image,
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -169,6 +175,37 @@ class _ShowImageState extends State<ShowImage> {
                 children: [
                   ElevatedButton(
                     onPressed: () async {
+                      final directory = await getApplicationDocumentsDirectory();
+                      pieceInfoList.clear();
+                      for (int i = 0; i < widget.pieceList.length; i++) {
+                        Piece_Info pieceInfo = Piece_Info(
+                            rotation: widget.pieceList[i].angle,
+                            currentPosition: i,
+                            originalPosition:
+                                widget.pieceList[i].original_Position);
+
+                        pieceInfoList.add(pieceInfo);
+                      }
+
+                      Map<String, dynamic> jsonObject = {
+                        "puzzleName": widget.puzzleInfo!.puzzleName,
+                        "pattern": widget.puzzleInfo!.pattern,
+                        "pieceCount": widget.puzzleInfo!.pieces_count,
+                        "dateTime": widget.puzzleInfo!.dateTime,
+                        "pieces_info": pieceInfoList,
+                      };
+                      File file = await writePuzzle(jsonEncode(jsonObject));
+                    //  File ImageTextFile = await writeImage(widget.imageFile);
+
+
+                      print("flie==${file.toString()}");
+                    //  print("ImageTextFile==${ImageTextFile.toString()}");
+                      var encoder = ZipFileEncoder();
+                      encoder.create(directory.path+"/"+"puzzle.zip");
+                      encoder.addFile(File(file.path));
+                      encoder.addFile(widget.imageFile!);
+                      encoder.close();
+
 
                       showPreviewImage(context, "title");
                     },
@@ -192,45 +229,73 @@ class _ShowImageState extends State<ShowImage> {
                         pieces_count: int.parse(
                             "${widget.rowCount * widget.columnCount}"),
                       );
+                      if (!widget.isFromSavedPuzzle) {
+                        databaseHelper.insertPuzzle(puzzleInfo).then((value) {
+                          bool isDataSaved = true;
+                          String dataSaveError = "";
+                          for (int i = 0; i < widget.pieceList.length; i++) {
+                            Piece_Info piece_info = Piece_Info(
+                                puzzleId: value,
+                                rotation: widget.pieceList[i].angle,
+                                currentPosition: i,
+                                originalPosition:
+                                    widget.pieceList[i].original_Position,
+                                image: widget.pieceList[i].image);
+                            databaseHelper
+                                .insertPiece(piece_info)
+                                .then((value) {})
+                                .catchError((onError) {
+                              isDataSaved = false;
+                              dataSaveError = onError.toString();
+                            });
+                          }
 
-                      databaseHelper.insertPuzzle(puzzleInfo).then((value) {
-                        bool isDataSaved = true;
-                        String dataSaveError = "";
-                        for (int i = 0; i < widget.pieceList.length; i++) {
-
-                          //List<int> imageBytes = widget.pieceList[i].image
-                        //  print(imageBytes);
-                          //String base64Image = base64Encode(widget.pieceList[i].image);
-
-
-
-                          Piece_Info piece_info = Piece_Info(
-                            puzzleId: value,
-                            rotation: widget.pieceList[i].angle,
-                            currentPosition: i,
-                            originalPosition: widget.pieceList[i].original_Position,
-                            image: widget.pieceList[i].image
-                          );
-                          databaseHelper
-                              .insertPiece(piece_info)
-                              .then((value) {})
-                              .catchError((onError) {
-                            isDataSaved = false;
-                            dataSaveError = onError.toString();
-                          });
-                        }
-
-                        if (isDataSaved) {
+                          if (isDataSaved) {
+                            showAlertDialogForDbOperations(
+                                context, "Your puzzle saved successfully");
+                          } else {
+                            showAlertDialogForDbOperations(
+                                context, dataSaveError);
+                          }
+                        }).catchError((onError) {
                           showAlertDialogForDbOperations(
-                              context, "Your puzzle saved Successfully");
-                        } else {
+                              context, onError.toString());
+                        });
+                      } else {
+                        databaseHelper
+                            .deletePiece(widget.puzzleId!)
+                            .then((value) {
+                          bool isDataSaved = true;
+                          String dataSaveError = "";
+                          for (int i = 0; i < widget.pieceList.length; i++) {
+                            Piece_Info piece_info = Piece_Info(
+                                puzzleId: widget.puzzleId,
+                                rotation: widget.pieceList[i].angle,
+                                currentPosition: i,
+                                originalPosition:
+                                    widget.pieceList[i].original_Position,
+                                image: widget.pieceList[i].image);
+                            databaseHelper
+                                .insertPiece(piece_info)
+                                .then((value) {})
+                                .catchError((onError) {
+                              isDataSaved = false;
+                              dataSaveError = onError.toString();
+                            });
+                          }
+
+                          if (isDataSaved) {
+                            showAlertDialogForDbOperations(
+                                context, "Your puzzle updated successfully");
+                          } else {
+                            showAlertDialogForDbOperations(
+                                context, dataSaveError);
+                          }
+                        }).catchError((onError) {
                           showAlertDialogForDbOperations(
-                              context, dataSaveError);
-                        }
-                      }).catchError((onError) {
-                        showAlertDialogForDbOperations(
-                            context, onError.toString());
-                      });
+                              context, onError.toString());
+                        });
+                      }
                     },
                     child: const Text(
                       "Save",
@@ -334,8 +399,10 @@ class _ShowImageState extends State<ShowImage> {
           actions: [
             MaterialButton(
               onPressed: () {
-                Navigator.pushReplacement(
-                    context, MaterialPageRoute(builder: (context) => MyApp()));
+                Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => MyApp()),
+                    (route) => false);
               },
               color: Colors.green,
               child: Text("OK"),
@@ -457,4 +524,36 @@ class _ShowImageState extends State<ShowImage> {
       print("Error while playing audio.");
     }
   }
+
+  Future<String> get _localPath async {
+    final directory = await getApplicationDocumentsDirectory();
+
+    return directory.path;
+  }
+
+  Future<File> get _localFile async {
+    final path = await _localPath;
+
+    return File('$path/puzzle.json');
+  }
+
+  Future<File> get _localTextFile async {
+    final path = await _localPath;
+
+    return File('$path/image.text');
+  }
+
+  Future<File> writePuzzle(jsondata) async {
+    final file = await _localFile;
+
+    // Write the file
+    return file.writeAsString('$jsondata');
+  }
+
+ /* Future<File> writeImage(image) async {
+    final file = await _localTextFile;
+
+    // Write the file
+    return file.('$image');
+  }*/
 }

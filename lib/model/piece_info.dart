@@ -8,10 +8,10 @@ class Piece_Info {
 
 
   Piece_Info(
-      { required this.puzzleId,
+      {  this.puzzleId,
         required this.rotation,
         required this.currentPosition,
-        required this.image,
+         this.image,
         required this.originalPosition});
 
   Piece_Info.fromJson(Map<String, dynamic> json) {

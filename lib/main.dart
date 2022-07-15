@@ -46,42 +46,67 @@ class _MyAppState extends State<MyApp> {
       ),
       body: Container(
           padding: const EdgeInsets.all(15),
-          child: Container(
-            alignment: Alignment.center,
+          child: Center(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Column(
-                  children: [
-                    MaterialButton(
-                      color: Colors.greenAccent,
-                      onPressed: () {
-                        _getFromGallery();
-                      },
-                      child: const Text("PICK FROM GALLERY"),
-                    ),
-                    Container(
-                      height: 40.0,
-                    ),
-                    MaterialButton(
-                      color: Colors.lightGreenAccent,
-                      onPressed: () {
-                        _getFromCamera();
-                      },
-                      child: const Text("PICK FROM CAMERA"),
-                    ),
-                    MaterialButton(
-                      color: Colors.lightGreenAccent,
-                      onPressed: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (BuildContext context) =>
-                                    Saved_Puzzle()));
-                      },
-                      child: const Text("Saved Puzzles"),
-                    )
-                  ],
+                Padding(
+                  padding: const EdgeInsets.all(50.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: MaterialButton(
+                              color: Colors.greenAccent,
+                              onPressed: () {
+                                _getFromGallery();
+                              },
+                              child: const Text("PICK FROM GALLERY"),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const  SizedBox(
+                        height: 30,
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: MaterialButton(
+                              color: Colors.lightGreenAccent,
+                              onPressed: () {
+                                _getFromCamera();
+                              },
+                              child: const Text("PICK FROM CAMERA"),
+                            ),
+                          ),
+                        ],
+                      ),
+                     const SizedBox(
+                        height: 30,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: MaterialButton(
+                              color: Colors.lightBlueAccent,
+                              onPressed: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (BuildContext context) =>
+                                        const  Saved_Puzzle()));
+                              },
+                              child:  const Text("SAVED PUZZLES"),
+                            ),
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
                 )
               ],
             ),
@@ -90,7 +115,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   _getFromGallery() async {
-    PickedFile? pickedFile = await ImagePicker().getImage(
+    XFile? pickedFile = await ImagePicker().pickImage(
       source: ImageSource.gallery,
       maxWidth: MediaQuery.of(context).size.height,
       maxHeight: MediaQuery.of(context).size.height,
@@ -170,15 +195,16 @@ class _MyAppState extends State<MyApp> {
                         final srcImage = decodeImage(
                             File(imageFile!.path).readAsBytesSync());
 
-                        var picHeight =
-                            srcImage?.height != null ? srcImage?.height : 100;
-                        var picWidth =
-                            srcImage?.width != null ? srcImage?.width : 100;
+                        var picHeight = srcImage!.height;
+                        var picWidth = srcImage!.width ;
+                        print("picHeight$picHeight");
+                        print("picWidth$picWidth");
                         var height = picHeight! / count!.row;
                         var width = picWidth! / count!.column;
-
+                        print("height$height");
+                        print("width$width");
                         int picId = 0;
-                        var imagesCount = count!.row * count!.column;
+
 
                         pieceList.clear();
                         Random rand = Random();
@@ -187,18 +213,16 @@ class _MyAppState extends State<MyApp> {
                           for (int j = 0; j < count!.column; j++) {
                             var croppedImage = copyCrop(srcImage!, x.round(),
                                 y.round(), width.round(), height.round());
-                     // File file =File.fromRawPath(Uint8List.fromList(imglib.encodeJpg(croppedImage)));
-
-                            String base64Image = base64.encode(Uint8List.fromList(
-                                imglib.encodeJpg(croppedImage)));
 
 
-
+                            String base64Image = base64.encode(
+                                Uint8List.fromList(
+                                    imglib.encodeJpg(croppedImage)));
 
                             image = a.Image.memory(Uint8List.fromList(
                                 imglib.encodeJpg(croppedImage)));
                             int randomIndex = rand.nextInt(angles.length);
-                            print("image${image}");
+
                             Piece piece = Piece(
                                 image: base64Image,
                                 angle: angles[randomIndex],
@@ -207,11 +231,14 @@ class _MyAppState extends State<MyApp> {
                             pieceList.add(piece);
 
                             picId = picId + 1;
-
+                            print("($i,$j)");
+                            print("x==$x   y==$y");
                             x = x + width;
+
                           }
                           x = 0.0;
                           y = y + height;
+                          print("x==$x   y==$y");
                         }
 
                         Navigator.push(

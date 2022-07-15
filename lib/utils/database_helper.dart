@@ -59,33 +59,6 @@ class DatabaseHelper {
         'CREATE TABLE $pieceTable($colId INTEGER ,$colRotation INTEGER,$colCurrent_Position INTEGER,$colOriginal_Position INTEGER ,$colImage TEXT)');
   }
 
-  // Fetch Operation: Get all note objects from database
-  Future<List<Map<String, dynamic>>> getPuzzleMapList() async {
-    Database db = await this.database;
-    var result = await db.rawQuery('SELECT * FROM $puzzleTable');
-    log("puzzless${result}");
-    return result;
-  }
-
-// Fetch Operation: Get all note objects from database
-  Future<List<Map<String, dynamic>>> getPieceMapList(int id) async {
-    Database db = await this.database;
-    var result =
-        await db.rawQuery('SELECT * FROM $pieceTable where $colId=$id');
-    log("puzzless${result}");
-    return result;
-  }
-
-  dropTable() async {
-    Database db = await this.database;
-    var result = await db.rawQuery('DROP TABLE $pieceTable');
-  }
-
-  Future<int> deleteNote() async {
-    var db = await this.database;
-    int result = await db.rawDelete('DELETE FROM $puzzleTable ');
-    return result;
-  }
 
   // Insert Operation: Insert a Note object to database
   Future<int> insertPuzzle(PuzzleInfo puzzleInfo) async {
@@ -99,7 +72,22 @@ class DatabaseHelper {
     var result = await db.insert(pieceTable, piece_info.toJson());
     return result;
   }
+  // Fetch Operation: Get all note objects from database
+  Future<List<Map<String, dynamic>>> getPuzzleMapList() async {
+    Database db = await this.database;
+    var result = await db.rawQuery('SELECT * FROM $puzzleTable');
+    log("puzzless${result}");
+    return result;
+  }
 
+// Fetch Operation: Get all note objects from database
+  Future<List<Map<String, dynamic>>> getPieceMapList(int id) async {
+    Database db = await this.database;
+    var result =
+        await db.rawQuery('SELECT * FROM $pieceTable where $colId=$id');
+
+    return result;
+  }
   // Get the 'Map List' [ List<Map> ] and convert it to 'Note List' [ List<Note> ]
   Future<List<PuzzleInfo>> getPuzzleList() async {
     var noteMapList = await getPuzzleMapList(); // Get 'Map List' from database
@@ -118,7 +106,7 @@ class DatabaseHelper {
   // Get the 'Map List' [ List<Map> ] and convert it to 'Note List' [ List<Note> ]
   Future<List<Piece_Info>> getPieceList(int id) async {
     var pieceMapList =
-        await getPieceMapList(id); // Get 'Map List' from database
+    await getPieceMapList(id); // Get 'Map List' from database
     int count =
         pieceMapList.length; // Count the number of map entries in db table
 
@@ -130,4 +118,38 @@ class DatabaseHelper {
 
     return PieceList;
   }
+
+  // update operation
+  Future<int> updatePiece(Piece_Info piece_info) async {
+    var db = await this.database;
+    var result = await db.update(pieceTable, piece_info.toJson(), where: "$colId = ?", whereArgs: [piece_info.puzzleId]);
+
+    print("resultforUpdation$result");
+    return result;
+  }
+
+
+
+ // delete puzzle operation based on puzzle id
+  Future<int> deletePuzzle(int id) async {
+    var db = await this.database;
+    int result = await db.rawDelete('DELETE FROM $puzzleTable where $colId=$id');
+    print("result1$result");
+
+    return result;
+  }
+  Future<int> deletePiece(int id) async {
+    var db = await this.database;
+    int result = await db.rawDelete('DELETE FROM $pieceTable where $colId=$id');
+
+    print("result2$result");
+    return result;
+  }
+
+
+  dropTable() async {
+    Database db = await this.database;
+    var result = await db.rawQuery('DROP TABLE $pieceTable');
+  }
+
 }

@@ -42,7 +42,12 @@ dependencies:
   sqflite: ^2.0.1
   intl: ^0.17.0
   archive: ^3.3.0
-
+  dio: ^4.0.6
+  screenshot: ^1.2.3
+  share: ^2.0.4
+  uni_links: ^0.5.1
+  fluttertoast: ^8.0.9
+  path: ^1.8.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

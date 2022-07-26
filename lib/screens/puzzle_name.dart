@@ -1,11 +1,12 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:fractured_photo/model/piece.dart';
+
+import 'package:fractured_photo/model/piece_info.dart';
 import 'package:fractured_photo/screens/showImage.dart';
 
 class NameScreen extends StatefulWidget {
-  List<Piece> pieceList;
+  List<Piece_Info> pieceList;
   File? imageFile;
   int columnCount;
   int rowCount;
@@ -71,7 +72,7 @@ class _NameScreenState extends State<NameScreen> {
                         }
 
                       },
-                      child: Text(
+                      child:const Text(
                         "START",
                         style: TextStyle(color: Colors.white),
                       ),
@@ -90,7 +91,7 @@ class _NameScreenState extends State<NameScreen> {
     return ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: Colors.red,
-        content: Text(message!,style: TextStyle(fontSize: 20),),
+        content: Text(message!,style: const TextStyle(fontSize: 20),),
         duration: const Duration(seconds: 2),
       ),
     );

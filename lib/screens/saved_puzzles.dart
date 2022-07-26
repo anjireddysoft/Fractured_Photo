@@ -1,9 +1,8 @@
-import 'dart:convert';
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:fractured_photo/main.dart';
-import 'package:fractured_photo/model/piece.dart';
+
 import 'package:fractured_photo/model/piece_info.dart';
 import 'package:fractured_photo/model/puzzle_info.dart';
 import 'package:fractured_photo/screens/showImage.dart';
@@ -32,12 +31,8 @@ class _Saved_PuzzleState extends State<Saved_Puzzle> {
 
   readPuzzlesInfo() {
     databaseHelper.getPuzzleList().then((value) {
-      print("value${value.length}");
-
       puzzleInfoList = value;
       setState(() {});
-
-      print("puzzleInfoList${puzzleInfoList.length}");
     });
   }
 
@@ -49,7 +44,7 @@ class _Saved_PuzzleState extends State<Saved_Puzzle> {
       ),
       body: Container(
         padding: const EdgeInsets.all(10),
-        child: puzzleInfoList.length != null && puzzleInfoList.length != 0
+        child: puzzleInfoList.length != null && puzzleInfoList.isNotEmpty
             ? ListView.separated(
                 separatorBuilder: (BuildContext context, int index) =>
                     const SizedBox(
@@ -59,19 +54,18 @@ class _Saved_PuzzleState extends State<Saved_Puzzle> {
                 itemBuilder: (BuildContext context, int index) {
                   return InkWell(
                     onTap: () async {
-                      List<Piece> pieceList = [];
+                      List<Piece_Info> pieceList = [];
                       pieceInfoList = await databaseHelper
                           .getPieceList(puzzleInfoList[index].puzzle_id!);
                       var pattern = puzzleInfoList[index].pattern;
 
                       for (int i = 0; i < pieceInfoList.length; i++) {
-                        Piece piece = Piece(
+                        Piece_Info piece = Piece_Info(
                             image: pieceInfoList[i].image.toString(),
-                            angle: pieceInfoList[i].rotation!,
-                            original_Position:
+                            angle: pieceInfoList[i].angle,
+                            originalPosition:
                                 pieceInfoList[i].originalPosition!,
-                            current_Position:
-                                pieceInfoList[i].currentPosition!);
+                            currentPosition: pieceInfoList[i].currentPosition!);
                         pieceList.add(piece);
                       }
 
@@ -79,22 +73,20 @@ class _Saved_PuzzleState extends State<Saved_Puzzle> {
                           context,
                           MaterialPageRoute(
                               builder: (BuildContext context) => ShowImage(
-                                puzzleId:puzzleInfoList[index]
-                                    .puzzle_id ,
-                                    pieceList: pieceList,
-                                    columnCount: int.parse("${pattern![2]}"),
+                                    puzzleId: puzzleInfoList[index].puzzle_id,
+                                    pieceList: pieceInfoList,
+                                    columnCount: int.parse(pattern![2]),
                                     imageFile: File(
                                       puzzleInfoList[index]
                                           .file_path
                                           .toString(),
                                     ),
-                                    rowCount: int.parse("${pattern![0]}"),
+                                    rowCount: int.parse(pattern[0]),
                                     puzzleName: puzzleInfoList[index]
                                         .puzzleName
                                         .toString(),
                                     isFromSavedPuzzle: true,
-                                puzzleInfo: puzzleInfoList[index],
-
+                                    puzzleInfo: puzzleInfoList[index],
                                   )));
                     },
                     child: Material(
@@ -130,12 +122,12 @@ class _Saved_PuzzleState extends State<Saved_Puzzle> {
                                       .deletePuzzle(
                                           puzzleInfoList[index].puzzle_id!)
                                       .then((value) {
-                                    print("value1$value");
+
                                     databaseHelper
                                         .deletePiece(
                                             puzzleInfoList[index].puzzle_id!)
                                         .then((value) {
-                                      print("value2$value");
+
                                       showAlertDialogForDbOperations(context,
                                           "Puzzle deleted Successfully");
                                     }).catchError((onError) {
@@ -155,7 +147,7 @@ class _Saved_PuzzleState extends State<Saved_Puzzle> {
                   );
                 },
               )
-            : Center(
+            : const Center(
                 child: Text(
                 "No Saved puzzles to load",
                 style: TextStyle(fontSize: 24),
@@ -170,6 +162,7 @@ class _Saved_PuzzleState extends State<Saved_Puzzle> {
       builder: (BuildContext c) {
         Future.delayed(const Duration(seconds: 5), () {
           //  Navigator.of(context).pop(true);
+
         });
 
         return AlertDialog(

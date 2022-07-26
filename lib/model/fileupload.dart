@@ -24,13 +24,13 @@ class FileUpload {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['success'] = this.success;
-    data['upload_status'] = this.uploadStatus;
-    data['file'] = this.file;
-    data['path'] = this.path;
-    data['filesize'] = this.filesize;
-    data['imagefilesize'] = this.imagefilesize;
+    final Map<String, dynamic> data =  <String, dynamic>{};
+    data['success'] = success;
+    data['upload_status'] = uploadStatus;
+    data['file'] = file;
+    data['path'] = path;
+    data['filesize'] = filesize;
+    data['imagefilesize'] = imagefilesize;
     return data;
   }
 }

@@ -21,7 +21,7 @@ class DatabaseHelper {
   String colFilePath = 'file_path';
   String colDateTime = 'dateTime';
 
-  String colRotation = "rotation";
+  String colRotation = "angle";
   String colCurrent_Position = "current_Position";
   String colOriginal_Position = "original_Position";
   String colImage = "image";
@@ -115,7 +115,7 @@ class DatabaseHelper {
     for (int i = 0; i < count; i++) {
       PieceList.add(Piece_Info.fromJson(pieceMapList[i]));
     }
-
+print("PieceList${PieceList.length}");
     return PieceList;
   }
 
@@ -149,7 +149,7 @@ class DatabaseHelper {
 
   dropTable() async {
     Database db = await this.database;
-    var result = await db.rawQuery('DROP TABLE $pieceTable');
+   await db.rawQuery('DROP TABLE $pieceTable');
   }
 
 }

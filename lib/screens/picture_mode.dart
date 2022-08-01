@@ -12,8 +12,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:fractured_photo/model/count.dart';
-import 'package:fractured_photo/model/tile.dart';
+
 import 'package:fractured_photo/model/piece_info.dart';
+import 'package:fractured_photo/screens/mask_builder.dart';
 import 'package:fractured_photo/screens/paint.dart';
 import 'package:fractured_photo/screens/puzzle_name.dart';
 import 'package:fractured_photo/screens/puzzle_type.dart';
@@ -27,20 +28,17 @@ import 'package:flutter/src/widgets/image.dart' as a;
 import 'package:uni_links/uni_links.dart';
 import 'package:path_provider/path_provider.dart';
 
-void main() {
-  runApp(const MaterialApp(
-    home: MyApp(),
-  ));
-}
+class PictureMode extends StatefulWidget {
+  bool isSquarePuzzle;
 
-class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);
+
+  PictureMode({Key? key, required this.isSquarePuzzle,}) : super(key: key);
 
   @override
-  _MyAppState createState() => _MyAppState();
+  _PictureModeState createState() => _PictureModeState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _PictureModeState extends State<PictureMode> {
   Uri? _initialURI;
   Uri? _currentURI;
   Object? _err;
@@ -48,6 +46,7 @@ class _MyAppState extends State<MyApp> {
   StreamSubscription? _streamSubscription;
   bool _initialURILinkHandled = false;
   bool isFromUrl = true;
+  bool isLoading=false;
 
   File? imageFile;
   List<Count> numbers = [
@@ -168,67 +167,113 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text("Image Picker"),
+          title: const Text("Puzzle Mode"),
+          automaticallyImplyLeading: true,
+          leading: IconButton(
+            color: Colors.black,
+            icon: Icon(Icons.arrow_back,color: Colors.white,),
+            iconSize: 20.0,
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
         ),
-        body: Container(
-            padding: const EdgeInsets.all(15),
-            child: Center(
-              child: Column(
-                 mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(50.0),
-                    child: Column(
-                      //  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-
-                        Row(
+        body: Stack(
+          children: [
+                Container(
+                padding: const EdgeInsets.all(15),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(50.0),
+                        child: Column(
+                          //  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(
-                              child: MaterialButton(
-                                color: Colors.lightGreenAccent,
-                                onPressed: () {
+                            /*Row(
+                              children: [
+                                Expanded(
+                                  child: MaterialButton(
+                                    color: Colors.lightGreenAccent,
+                                    onPressed: () async {
+                                      String completeUrl = "https://fracturedphotoapp.com/mobile.php?filename=43krK.fp";
+                                      var fileName = completeUrl
+                                          .split("=")
+                                          .last;
 
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>const  PuzzleType(
 
-                                          )));
-                                },
-                                child: const Text("Create Puzzle"),
-                              ),
+                                      var file = await _downloadFile("https://fracturedphotoapp.com/mobile.php?filename=43krK.fp", fileName);
+                                      print("file${file.toString()}");
+                                    },
+                                    child: const Text("DOWNLOAD FILE"),
+                                  ),
+                                ),
+                              ],
+                            ),*/
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: MaterialButton(
+                                    color: Colors.greenAccent,
+                                    onPressed: () {
+                                      setState(() {
+                                        isFromUrl = false;
+                                      });
+                                      _getFromGallery(context);
+                                    },
+                                    child: const Text("PICK FROM GALLERY"),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: MaterialButton(
+                                    color: Colors.greenAccent,
+                                    onPressed: () {
+                                      setState(() {
+                                        isFromUrl == true;
+                                      });
+                                      ExtractZip(context);
+                                    },
+                                    child: const Text("Extract.fp"),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(
+                              height: 30,
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: MaterialButton(
+                                    color: Colors.lightGreenAccent,
+                                    onPressed: () {
+                                      setState(() {
+                                        isFromUrl = false;
+                                      });
+                                      _getFromCamera(context);
+                                    },
+                                    child: const Text("PICK FROM CAMERA"),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(
+                              height: 30,
                             ),
                           ],
                         ),
+                      )
+                    ],
+                  ),
+                )),
 
-                        const SizedBox(
-                          height: 30,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: MaterialButton(
-                                color: Colors.lightGreenAccent,
-                                onPressed: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (BuildContext context) =>
-                                              const Saved_Puzzle()));
-                                },
-                                child: const Text("Saved Puzzles"),
-                              ),
-                            ),
-                          ],
-                        )
-                      ],
-                    ),
-                  )
-                ],
-              ),
-            )),
+              ],
+        ),
       ),
     );
   }
@@ -311,7 +356,21 @@ class _MyAppState extends State<MyApp> {
       setState(() {
         isFromUrl == false;
         imageFile = File(pickedFile.path);
-        showRcAlert("", context);
+        if (widget.isSquarePuzzle) {
+          showRcAlert("", context);
+        } else {
+          setState(() {
+            isLoading=true;
+          });
+           Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => NameScreen(
+                    isFromSquarePuzzle: widget.isSquarePuzzle,
+                    imageFile: imageFile,
+
+                  )));
+        }
       });
     }
   }
@@ -324,7 +383,21 @@ class _MyAppState extends State<MyApp> {
       setState(() {
         isFromUrl == false;
         imageFile = File(pickedFile.path);
-        showRcAlert("", context);
+        if (widget.isSquarePuzzle) {
+          showRcAlert("", context);
+        } else {
+          setState(() {
+            isLoading=true;
+          });
+           Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => NameScreen(
+                    isFromSquarePuzzle: widget.isSquarePuzzle,
+                    imageFile:imageFile,
+
+                  )));
+        }
       });
     }
   }
@@ -370,11 +443,11 @@ class _MyAppState extends State<MyApp> {
                           count = numbers[index];
                         });
 
-                        /*splittingImage(
+                        splittingImage(
                             context: context,
                             pickedImageFile: imageFile!,
                             row: count!.row,
-                            column: count!.column);*/
+                            column: count!.column);
                       },
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
@@ -474,8 +547,7 @@ class _MyAppState extends State<MyApp> {
                     pieceList: pieceList,
                     columnCount: count!.column,
                     imageFile: pickedImageFile,
-                    rowCount: count!.row,
-                isFromSquarePuzzle: true,
+                    rowCount: count!.row, isFromSquarePuzzle: widget.isSquarePuzzle,
                   )));
     }
   }

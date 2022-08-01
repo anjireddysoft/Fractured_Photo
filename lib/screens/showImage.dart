@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
+
 
 import 'dart:typed_data';
 import 'dart:ui';
@@ -16,10 +16,10 @@ import 'package:fractured_photo/main.dart';
 import 'package:fractured_photo/model/fileupload.dart';
 import 'package:fractured_photo/model/piece_info.dart';
 import 'package:fractured_photo/model/puzzle_info.dart';
-import 'package:fractured_photo/screens/paint.dart';
+
 import 'package:fractured_photo/screens/utile.dart';
 import 'package:fractured_photo/utils/database_helper.dart';
-import 'package:image/image.dart' as I;
+
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:screenshot/screenshot.dart';
@@ -176,7 +176,7 @@ class _ShowImageState extends State<ShowImage> {
                               angle: angle,
                               child: Image(
                                 image: image.image,
-                                fit: BoxFit.contain,
+                                fit: BoxFit.cover,
                               ),
                             ),
                           );
